@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import express from "express";
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import cors from "cors";
 
 dotenv.config();
@@ -12,6 +12,7 @@ app.use(express.json());
 const client = new MongoClient(process.env.MONGODB_URI);
 const db = client.db(process.env.DATABASE_NAME);
 const medicinesCollection = db.collection("medicines");
+const cartCollection = db.collection("cart");
 
 app.get("/", (req, res) => {
   res.send("Mediflow Server is Running");
@@ -59,6 +60,39 @@ export async function connectToMongoDB() {
         return res.status(200).json(result);
       } catch (error) {
         console.error("error", Error);
+      }
+    });
+
+    // Add to cart post method:
+    app.post("/api/cart", async (req, res) => {
+      try {
+        const { userId, medicineId, quanitiy } = req.body;
+
+        const existingMedicine = await cartCollection.findOne({
+          userId: userId,
+          medicineId: new ObjectId(medicineId),
+        });
+
+        if (existingMedicine) {
+          const result = await cartCollection.updateOne(
+            { _id: existingMedicine._id },
+            { $inc: { quanitiy: quanitiy } },
+          );
+          return res.json(result);
+        }
+
+        const newCartItem = {
+          userId: userId,
+          medicineId: new ObjectId(medicineId),
+          quanitiy: quanitiy,
+          updatedAt: new Date(),
+        };
+
+        const result = await cartCollection.insertOne(newCartItem);
+        return res.json(result);
+      } catch (error) {
+        console.error(error);
+        throw error;
       }
     });
 
