@@ -96,6 +96,32 @@ export async function connectToMongoDB() {
       }
     });
 
+    // get users cart:
+    app.get("/api/cart/:userId", async (req, res) => {
+      try {
+        const { userId } = req.params;
+
+        const cartItems = await cartCollection
+          .aggregate([
+            { $match: { userId: userId } },
+            {
+              $lookup: {
+                from: "medicines",
+                localField: "medicineId",
+                foreignField: "_id",
+                as: "medicineDetails",
+              },
+            },
+            { $unwind: "$medicineDetails" },
+          ])
+          .toArray();
+        res.status(200).json(cartItems);
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal Server Error" });
+      }
+    });
+
     console.log("You successfully connected to MongoDB!");
     return client;
   } catch (err) {
