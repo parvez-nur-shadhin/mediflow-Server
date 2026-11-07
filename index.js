@@ -145,6 +145,22 @@ export async function connectToMongoDB() {
         return res.status(500).json({ message: "Internal Server Error" });
       }
     });
+
+    // Delete from cart method:
+    app.delete("/api/cart/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+        const result = await cartCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
+
+        return res.status(200).json(result);
+      } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "internal server error" });
+      }
+    });
+
     console.log("You successfully connected to MongoDB!");
     return client;
   } catch (err) {
