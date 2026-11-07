@@ -122,6 +122,29 @@ export async function connectToMongoDB() {
       }
     });
 
+    // update cart method
+    app.put("/api/cart/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+        const { quanitiy } = req.body;
+
+        if (quanitiy < 1) {
+          return res
+            .status(400)
+            .json({ message: "Quantity must be greater than 1" });
+        }
+
+        const result = await cartCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: { quanitiy: quanitiy } },
+        );
+
+        return res.status(200).json(result);
+      } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Internal Server Error" });
+      }
+    });
     console.log("You successfully connected to MongoDB!");
     return client;
   } catch (err) {
